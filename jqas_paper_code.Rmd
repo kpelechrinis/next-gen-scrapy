@@ -350,8 +350,9 @@ ggcpae <- ggplot(qbs.dt, aes(x=CPAE17, y = CPAE18)) + geom_point(aes(size = Tota
           axis.title = element_text(size=8),
           legend.title = element_text(size=8)) +
     scale_x_continuous(breaks = seq(-6, 6, by = 1), limits = c(-6,6)) +
-    scale_y_continuous(breaks = seq(-6,7, by = 1), limits = c(-6,7))
+    scale_y_continuous(breaks = seq(-6,7, by = 1), limits = c(-6,7))+annotate("text",label="Drew Brees",x = 4.4, y = 6.8,color="green")+annotate("text",label="C.J. Beathard",x = -5.1, y = -4.8, color = "red")+annotate("text",label="Blake Bortles",x = -2.1, y =-5.5, color = "red")+annotate("text",label="Russell Wilson",x=5,y=4, color="green")
 
+qbs.dt
 ggcpae
 
 ```
