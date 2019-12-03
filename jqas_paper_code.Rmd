@@ -355,6 +355,29 @@ ggcpae <- ggplot(qbs.dt, aes(x=CPAE17, y = CPAE18)) + geom_point(aes(size = Tota
 qbs.dt
 ggcpae
 
+
+
+```
+
+# Compare with NGS
+
+```{r}
+cpae_ngs <- read.csv("cpae_ngs.csv")
+cpae_ngs$Year = as.factor(cpae_ngs$Year)
+
+ggcpaengs <- ggplot(cpae_ngs, aes(x=NB,y = NG)) + geom_point(aes(color=Year))+geom_smooth(method=lm)+labs(x = "Naive Bayes CPAE", y = "NGS CPAE") +theme_bw()+
+    theme(plot.title = element_text(size=10),
+          axis.title = element_text(size=8),
+          legend.title = element_text(size=8)) +
+    scale_x_continuous(breaks = seq(-5, 7, by = 1)) +
+    scale_y_continuous(breaks = seq(-11,6, by = 1))+annotate(label = sprintf("R² = 0.68"),
+           geom = "text", x = -3, y = 4, size = 5) 
+
+ggcpaengs
+
+summary(lm(NG~NB, data=cpae_ngs[which(as.character(cpae_ngs$Year)=="2017"),]))
+summary(lm(NG~NB, data=cpae_ngs[which(as.character(cpae_ngs$Year)=="2018"),]))
+
 ```
 
 ```{r, eval=FALSE, echo=FALSE, fig.align='center'}
