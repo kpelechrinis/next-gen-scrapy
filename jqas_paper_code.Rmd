@@ -490,6 +490,9 @@ for (i in 1:4)  {
 
 
 ```{r, echo=FALSE, fig.align='center'}
+
+```
+```{r}
 med_n_passes <- mean(table(passes_18$name))
 league_preds <- predict_data$complete_prob_18*100
 #all_teams <- sort(unique(passes$team))
@@ -597,3 +600,158 @@ for (i in 1:4)  {
     ggsave(gg_league_compare, file=paste0(t_abb, "_vs_league",".png"))
 }
 ```
+
+## CPAE defense 2018 
+
+```{r}
+def_2018 = as.data.frame(table(passes_18$team))
+colnames(def_2018) <- c("Team","Passes_Defended")
+def_2018$cpoa <- rep(0,32)
+med_n_passes <- mean(table(def_2018$Passes_Defended))
+league_preds <- predict_data$complete_prob_18*100
+all_teams <- sort(unique(passes$team))
+
+for (i in 1:length(all_teams))  {
+  t_abb <- all_teams[i]
+
+  predict_data$team_loop_density <- NULL
+  predict_data$final_model <- NULL
+  predict_data$team_loop_prob <- NULL
+  
+  team_df <- subset(passes_18, type == "reg")
+  team_df <- subset(team_df, home_team == t_abb | away_team == t_abb)
+  team_df <- subset(team_df, team != t_abb)
+  team_df <- subset(team_df, !is.na(x_coord))
+  n_team <- nrow(team_df)
+  
+  ##
+  team_complete_model_loop <- gam(is_complete ~ ti(x_coord) + ti(y_coord) + ti(x_coord, y_coord), data = team_df)
+  team_complete_preds_loop <- predict(team_complete_model_loop, predict_data, type = "response")
+  predict_data <- predict_data %>% 
+    mutate(
+      team_loop_prob = team_complete_preds_loop
+      )
+  
+  ##
+  team_density_loop <- kde2d(team_df$x_coord, team_df$y_coord,
+                      lims = c(-30, 30, -10, 55), 
+                      n = c(30--30+1, 55--10+1))
+  
+  team_density_loop_raster <- data.frame(rasterToPoints(raster(team_density_loop)))
+  colnames(team_density_loop_raster) <- c("x_coord", "y_coord", "team_loop_density")
+  predict_data <- join(predict_data, team_density_loop_raster, by = c("x_coord", "y_coord"))
+  
+  ##
+  
+  predict_data <- predict_data %>% 
+  mutate(
+    final_model = 
+      (med_n_passes*complete_prob_18*100*pass_density_18 + n_team*team_loop_prob*100*team_loop_density)/
+      (med_n_passes*pass_density_18 + n_team*team_loop_density)
+    )
+  
+  mid_dens <- mean(predict_data$final_model)
+  
+  predict_data <- predict_data  %>%
+    mutate(final_model = 
+           ifelse(final_model < 0, 0, final_model)
+    )
+  
+  predict_data <- predict_data  %>%
+    mutate(final_model = 
+           ifelse(final_model > 100, 100, final_model)
+    )
+  
+  predict_data$above_avg = predict_data$final_model - league_preds
+  
+  def_2018$cpoa[i] = sum(predict_data$above_avg*predict_data$qb_loop_density)
+  
+}
+def_2018
+```
+
+## CPAE defense 2017
+
+```{r}
+def_2017 = as.data.frame(table(passes_17$team))
+colnames(def_2017) <- c("Team","Passes_Defended")
+def_2017$cpoa <- rep(0,32)
+med_n_passes <- mean(table(def_2017$Passes_Defended))
+league_preds <- predict_data$complete_prob_17*100
+all_teams <- sort(unique(passes$team))
+
+for (i in 1:length(all_teams))  {
+  t_abb <- all_teams[i]
+
+  predict_data$team_loop_density <- NULL
+  predict_data$final_model <- NULL
+  predict_data$team_loop_prob <- NULL
+  
+  team_df <- subset(passes_17, type == "reg")
+  team_df <- subset(team_df, home_team == t_abb | away_team == t_abb)
+  team_df <- subset(team_df, team != t_abb)
+  team_df <- subset(team_df, !is.na(x_coord))
+  n_team <- nrow(team_df)
+  
+  ##
+  team_complete_model_loop <- gam(is_complete ~ ti(x_coord) + ti(y_coord) + ti(x_coord, y_coord), data = team_df)
+  team_complete_preds_loop <- predict(team_complete_model_loop, predict_data, type = "response")
+  predict_data <- predict_data %>% 
+    mutate(
+      team_loop_prob = team_complete_preds_loop
+      )
+  
+  ##
+  team_density_loop <- kde2d(team_df$x_coord, team_df$y_coord,
+                      lims = c(-30, 30, -10, 55), 
+                      n = c(30--30+1, 55--10+1))
+  
+  team_density_loop_raster <- data.frame(rasterToPoints(raster(team_density_loop)))
+  colnames(team_density_loop_raster) <- c("x_coord", "y_coord", "team_loop_density")
+  predict_data <- join(predict_data, team_density_loop_raster, by = c("x_coord", "y_coord"))
+  
+  ##
+  
+  predict_data <- predict_data %>% 
+  mutate(
+    final_model = 
+      (med_n_passes*complete_prob_17*100*pass_density_17 + n_team*team_loop_prob*100*team_loop_density)/
+      (med_n_passes*pass_density_17 + n_team*team_loop_density)
+    )
+  
+  mid_dens <- mean(predict_data$final_model)
+  
+  predict_data <- predict_data  %>%
+    mutate(final_model = 
+           ifelse(final_model < 0, 0, final_model)
+    )
+  
+  predict_data <- predict_data  %>%
+    mutate(final_model = 
+           ifelse(final_model > 100, 100, final_model)
+    )
+  
+  predict_data$above_avg = predict_data$final_model - league_preds
+  
+  def_2017$cpoa[i] = sum(predict_data$above_avg*predict_data$qb_loop_density)
+  
+}
+def_2017
+```
+```{r}
+# combine both defense years
+library(data.table)
+
+def_2017.dt <- data.table(def_2017, key = "Team")
+def_2018.dt <- data.table(def_2018, key = "Team")
+
+def.dt <- def_2017.dt[def_2018.dt]
+colnames(def.dt) <- c("Team","npasses_2017", "CPAE17","npasses_2018","CPAE18")
+def.dt$npasses_2017 = as.character(round(def.dt$npasses_2017,digits = 3))
+def.dt$npasses_2018 = as.character(def.dt$npasses_2018)
+def.dt$CPAE17 = as.character(round(def.dt$CPAE17, digits=2))
+def.dt$CPAE18 = as.character(round(def.dt$CPAE18,digits = 2))
+stargazer(def.dt[,c(1,3,2,5,4)], summary=FALSE, rownames=FALSE)
+
+```
+
